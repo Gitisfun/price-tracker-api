@@ -1,6 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3014;
 
 const swaggerOptions = {
   definition: {
@@ -22,6 +22,51 @@ const swaggerOptions = {
     ],
     components: {
       schemas: {
+        Product: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Unique product identifier',
+              example: 'prod_123'
+            },
+            title: {
+              type: 'string',
+              description: 'Product title',
+              example: 'Laptop Computer'
+            },
+            name: {
+              type: 'string',
+              description: 'Product name',
+              example: 'Laptop Computer'
+            },
+            url: {
+              type: 'string',
+              format: 'uri',
+              description: 'Product URL',
+              example: 'https://example.com/product/laptop'
+            },
+            created_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Product creation timestamp',
+              example: '2024-01-15T10:30:00Z'
+            },
+            updated_at: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Product last update timestamp',
+              example: '2024-01-15T10:30:00Z'
+            },
+            deleted_at: {
+              type: 'string',
+              format: 'date-time',
+              nullable: true,
+              description: 'Product deletion timestamp (null if not deleted)',
+              example: null
+            }
+          }
+        },
         Error: {
           type: 'object',
           properties: {

@@ -15,7 +15,10 @@ export class BaseService {
 
     /**
      * Get all records (excluding soft-deleted ones)
-     * @param {Object} options - Query options (filters, sorting, pagination)
+     * @param {Object} options - Query options (filters, sorting, pagination, search)
+     * @param {Object} options.search - Search options
+     * @param {string} options.search.term - Substring to search for
+     * @param {Array<string>} options.search.columns - Array of column names to search in
      * @returns {Promise<Array>} Array of records
      */
     async getAll(options = {}) {
@@ -30,6 +33,25 @@ export class BaseService {
                 Object.entries(options.filters).forEach(([key, value]) => {
                     query = query.eq(key, value);
                 });
+            }
+
+            // Apply search if provided
+            if (options.search && options.search.term) {
+                const searchTerm = options.search.term;
+                const columns = options.search.columns || [];
+
+                if (columns.length > 0) {
+                    // Build OR conditions for multiple columns using Supabase filter syntax
+                    // Format: 'column1.ilike.%term%,column2.ilike.%term%'
+                    const searchConditions = columns
+                        .map(column => `${column}.ilike.%${searchTerm}%`)
+                        .join(',');
+
+                    query = query.or(searchConditions);
+                } else {
+                    // If no columns specified, throw an error to ensure explicit column selection
+                    throw new Error('Search columns must be specified when using search functionality');
+                }
             }
 
             // Apply sorting if provided

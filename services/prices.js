@@ -71,6 +71,57 @@ export class PricesService extends BaseService {
     }
 
     /**
+     * Get price for a product on a specific date
+     * @param {string} productId - Product ID
+     * @param {string} date - Date to get price for (ISO string)
+     * @returns {Promise<Object|null>} Price record for the specified date or null if not found
+     */
+    async getPriceByDate(productId, date) {
+        try {
+            const { data, error } = await this.db
+                .from(this.tableName)
+                .select('*')
+                .eq('product_id', productId)
+                .eq('date', date)
+                .is('deleted_at', null)
+                .single();
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    // No rows returned
+                    return null;
+                }
+                throw error;
+            }
+
+            return data;
+        } catch (error) {
+            console.error(`Error getting price by date for product ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all prices for a specific date (across all products)
+     * @param {string} date - Date to get prices for (ISO string)
+     * @param {Object} options - Optional query options (orderBy, limit, etc.)
+     * @returns {Promise<Array>} Array of price records for the specified date
+     */
+    async getAllPricesByDate(date = new Date().toISOString(), options = {}) {
+        try {
+            const queryOptions = {
+                ...options,
+                filters: { date: date }
+            };
+
+            return await this.getAll(queryOptions);
+        } catch (error) {
+            console.error(`Error getting all prices by date ${date}:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * Get prices within a date range for a product
      * @param {string} productId - Product ID
      * @param {string} startDate - Start date (ISO string)
