@@ -149,21 +149,6 @@ export class PricesService extends BaseService {
             throw error;
         }
     }
-
-    /**
-     * Update price record by ID
-     * @param {number} id - Price record ID
-     * @param {Object} updates - Fields to update (price, currency, date)
-     * @returns {Promise<Object|null>} Updated price record or null if not found
-     */
-    async updatePrice(id, updates) {
-        try {
-            return await this.update(id, updates);
-        } catch (error) {
-            console.error(`Error updating price record ${id}:`, error);
-            throw error;
-        }
-    }
 }
 
 // Export a singleton instance
