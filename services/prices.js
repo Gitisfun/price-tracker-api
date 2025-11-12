@@ -1,0 +1,121 @@
+import { BaseService } from './BaseService.js';
+
+/**
+ * Prices service
+ * Handles all database operations for the prices table
+ */
+export class PricesService extends BaseService {
+    constructor() {
+        super('prices');
+    }
+
+    /**
+     * Create a new price record
+     * @param {Object} priceData - Price data (product_id, price, currency, date)
+     * @returns {Promise<Object>} Created price record
+     */
+    async createPrice(priceData) {
+        try {
+            const price = {
+                product_id: priceData.product_id,
+                price: priceData.price,
+                currency: priceData.currency || null,
+                date: priceData.date || new Date().toISOString()
+            };
+
+            return await this.create(price);
+        } catch (error) {
+            console.error('Error creating price record:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get all prices for a specific product
+     * @param {string} productId - Product ID
+     * @param {Object} options - Query options (orderBy, limit, etc.)
+     * @returns {Promise<Array>} Array of price records
+     */
+    async getByProductId(productId, options = {}) {
+        try {
+            const queryOptions = {
+                ...options,
+                filters: { product_id: productId },
+                orderBy: options.orderBy || { column: 'date', ascending: false }
+            };
+
+            return await this.getAll(queryOptions);
+        } catch (error) {
+            console.error(`Error getting prices for product ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get the latest price for a product
+     * @param {string} productId - Product ID
+     * @returns {Promise<Object|null>} Latest price record or null if not found
+     */
+    async getLatestPrice(productId) {
+        try {
+            const prices = await this.getByProductId(productId, {
+                limit: 1,
+                orderBy: { column: 'date', ascending: false }
+            });
+
+            return prices.length > 0 ? prices[0] : null;
+        } catch (error) {
+            console.error(`Error getting latest price for product ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get prices within a date range for a product
+     * @param {string} productId - Product ID
+     * @param {string} startDate - Start date (ISO string)
+     * @param {string} endDate - End date (ISO string)
+     * @returns {Promise<Array>} Array of price records
+     */
+    async getPricesByDateRange(productId, startDate, endDate) {
+        try {
+            const { data, error } = await this.db
+                .from(this.tableName)
+                .select('*')
+                .eq('product_id', productId)
+                .gte('date', startDate)
+                .lte('date', endDate)
+                .is('deleted_at', null)
+                .order('date', { ascending: false });
+
+            if (error) {
+                throw error;
+            }
+
+            return data || [];
+        } catch (error) {
+            console.error(`Error getting prices by date range for product ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Update price record by ID
+     * @param {number} id - Price record ID
+     * @param {Object} updates - Fields to update (price, currency, date)
+     * @returns {Promise<Object|null>} Updated price record or null if not found
+     */
+    async updatePrice(id, updates) {
+        try {
+            return await this.update(id, updates);
+        } catch (error) {
+            console.error(`Error updating price record ${id}:`, error);
+            throw error;
+        }
+    }
+}
+
+// Export a singleton instance
+export const pricesService = new PricesService();
+export default pricesService;
+
