@@ -48,10 +48,12 @@ app.use((req, res, next) => {
   
 app.use(errorHandler);
 
-server.listen(port, () => {
+server.listen(port, async () => {
 
+  console.log('🕐 Running tracker job...');
   // Cron job to run tracker job every day at 16:21 (4:21 PM)
   // Cron expression: "21 16 * * *" means: minute 21, hour 16, every day of month, every month, every day of week
+  await trackerJob();
   cron.schedule('15 12 * * *', async () => {
     console.log('🕐 Running scheduled tracker job at 12:15...');
     try {

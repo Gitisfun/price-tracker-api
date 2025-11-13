@@ -71,6 +71,26 @@ export class PricesService extends BaseService {
     }
 
     /**
+     * Get the previous price for a product (the price before the latest one)
+     * @param {string} productId - Product ID
+     * @returns {Promise<Object|null>} Previous price record or null if not found
+     */
+    async getPreviousPrice(productId) {
+        try {
+            const prices = await this.getByProductId(productId, {
+                limit: 2,
+                orderBy: { column: 'date', ascending: false }
+            });
+
+            // Return the second price (index 1) if it exists, otherwise null
+            return prices.length > 1 ? prices[1] : null;
+        } catch (error) {
+            console.error(`Error getting previous price for product ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * Get price for a product on a specific date
      * @param {string} productId - Product ID
      * @param {string} date - Date to get price for (ISO string)

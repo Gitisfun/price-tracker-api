@@ -12,7 +12,7 @@ const router = express.Router();
  * /api/products:
  *   get:
  *     summary: Get all products
- *     description: Retrieve a list of products with optional filtering, searching, sorting, and pagination. Supports substring search across multiple columns.
+ *     description: Retrieve a list of products with optional filtering, searching, sorting, and pagination. Supports substring search across multiple columns. Each product includes the latest price, previous price, and the rate of change between them.
  *     tags: [Products]
  *     parameters:
  *       - in: query
@@ -74,7 +74,7 @@ const router = express.Router();
  *                 $ref: '#/components/schemas/Product'
  *             examples:
  *               default:
- *                 summary: List of products
+ *                 summary: List of products with price information
  *                 value:
  *                   - id: "prod_123"
  *                     title: "Laptop Computer"
@@ -83,6 +83,11 @@ const router = express.Router();
  *                     created_at: "2024-01-15T10:30:00Z"
  *                     updated_at: "2024-01-15T10:30:00Z"
  *                     deleted_at: null
+ *                     latestPrice: 38.90
+ *                     latestPriceDate: "2024-01-15T10:30:00Z"
+ *                     previousPrice: 39.99
+ *                     previousPriceDate: "2024-01-14T08:20:00Z"
+ *                     priceChangeRate: -2.73
  *                   - id: "prod_456"
  *                     title: "Gaming Mouse"
  *                     name: "Gaming Mouse"
@@ -90,6 +95,11 @@ const router = express.Router();
  *                     created_at: "2024-01-14T08:20:00Z"
  *                     updated_at: "2024-01-14T08:20:00Z"
  *                     deleted_at: null
+ *                     latestPrice: 25.50
+ *                     latestPriceDate: "2024-01-14T08:20:00Z"
+ *                     previousPrice: null
+ *                     previousPriceDate: null
+ *                     priceChangeRate: null
  *       400:
  *         description: Bad request (e.g., invalid search columns)
  *         content:
@@ -156,7 +166,31 @@ router.get('/', async (req, res, next) => {
     }
 
     const products = await productsService.getAll(options);
-    res.json(products);
+    
+    // Enrich products with price information
+    const productsWithPrices = await Promise.all(
+      products.map(async (product) => {
+        const latestPrice = await pricesService.getLatestPrice(product.id);
+        const previousPrice = await pricesService.getPreviousPrice(product.id);
+        
+        let priceChangeRate = null;
+        if (latestPrice && previousPrice && previousPrice.price !== null && previousPrice.price !== 0) {
+          // Calculate rate of change as percentage: ((new - old) / old) * 100
+          priceChangeRate = ((latestPrice.price - previousPrice.price) / previousPrice.price) * 100;
+        }
+        
+        return {
+          ...product,
+          latestPrice: latestPrice ? latestPrice.price : null,
+          latestPriceDate: latestPrice ? latestPrice.date : null,
+          previousPrice: previousPrice ? previousPrice.price : null,
+          previousPriceDate: previousPrice ? previousPrice.date : null,
+          priceChangeRate: priceChangeRate !== null ? parseFloat(priceChangeRate.toFixed(2)) : null
+        };
+      })
+    );
+    
+    res.json(productsWithPrices);
   } catch (error) {
     next(error);
   }

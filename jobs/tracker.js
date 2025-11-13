@@ -18,14 +18,25 @@ export const trackerJob = async () => {
 
     // For each product, scrape the price and create a price entry
     for (const product of productsToTrack) {
-      const scrapedData = await trackPrice(product.url);
+      try {
+        const scrapedData = await trackPrice(product.url);
 
-      await pricesService.createPrice({
-        product_id: product.id,
-        price: scrapedData.price,
-        currency: 'EUR',
-        date: scrapedData.date,
-      });
+        // Only create a price record if the price was successfully scraped
+        if (scrapedData.price !== null && scrapedData.price !== undefined) {
+          await pricesService.createPrice({
+            product_id: product.id,
+            price: scrapedData.price,
+            currency: 'EUR',
+            date: scrapedData.date,
+          });
+          console.log(`✅ Successfully tracked price for product ${product.id}: ${scrapedData.price} EUR`);
+        } else {
+          console.warn(`⚠️ Skipping price record for product ${product.id} - price could not be scraped (URL: ${product.url})`);
+        }
+      } catch (error) {
+        console.error(`❌ Error processing product ${product.id} (${product.url}):`, error.message);
+        // Continue with next product instead of failing the entire job
+      }
     }
   } catch (error) {
     console.error('Error getting all products:', error);

@@ -10,13 +10,7 @@ export const trackPrice = async (url) => {
         const date = new Date().toISOString();
         
         console.log("🆔 Generated ID from URL:", id);
-        const response = await axios.get(url, {
-            headers: { 
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                "Accept-Language": "nl-NL,nl;q=0.9,en;q=0.8"
-            },
-        });
+        const response = await axios.get(url);
         
         const html = response.data;
         const $ = cheerio.load(html);
@@ -72,6 +66,7 @@ export const trackPrice = async (url) => {
         console.log("💰 Extracted price:", fullPrice);
         return { id, url, price: fullPrice, title, date };
     } catch (error) {
+        console.log("error", error)
         console.error("❌ Error scraping price:", error.message);
         console.error(error.stack);
         // Generate ID even on error
